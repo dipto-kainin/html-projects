@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Calculator</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f2f2f2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .calculator {
+        background-color: #1a1a1a;
+        border-radius: 20px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+        max-width: 500px;
+        width: 100%;
+        perspective: 1000px;
+    }
+
+    .display {
+        background-color: #121212;
+        color: #ffffff;
+        font-size: 2.5em;
+        padding: 15px;
+        text-align: right;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+    }
+
+    .buttons {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1px;
+    }
+
+    .button {
+        background-color: #262626;
+        border: 1px solid transparent;
+        color: #ffffff;
+        font-size: 1.5em;
+        padding: 20px;
+        cursor: pointer;
+        transition: background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .button:hover {
+        background-color: #363636;
+        transform: scale(1.05);
+    }
+
+    .button:active {
+        background-color: #1a1a1a;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .button:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 0, 255, 0.3);
+    }
+
+    .button::after {
+        content: '';
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.2);
+        transition: width 0.3s;
+        z-index: -1;
+    }
+
+    .button:hover::after {
+        width: 100%;
+    }
+
+    .button.clear::after,
+    .button.memory::after,
+    .button.function::after,
+    .button.addition::after,
+    .button.equal::after,
+    .button.e::after {
+        background: none;
+    }
+
+    .button.memory {
+        position: relative;
+    }
+
+    .button.memory::after {
+        border-radius: 10px;
+    }
+
+    .button.function {
+        position: relative;
+    }
+
+    .button.function::after {
+        border-radius: 10px;
+    }
+
+    .history {
+        background-color: #121212;
+        color: #ffffff;
+        font-size: 1em;
+        padding: 10px 15px;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+</style>
+</head>
+<body>
+<div class="calculator">
+    <div class="history" id="history"></div>
+    <div class="display" id="display">0</div>
+    <div class="buttons">
+        <button class="button clear" onclick="clearDisplay()">C</button>
+        <button class="button memory" onclick="memoryRecall()">MR</button>
+        <button class="button memory" onclick="memoryClear()">MC</button>
+        <button class="button memory" onclick="memoryStore()">MS</button>
+        <button class="button function" onclick="appendToDisplay('Math.sqrt(')">√</button>
+        <button class="button function" onclick="appendToDisplay('Math.sin(')">sin</button>
+        <button class="button function" onclick="appendToDisplay('Math.cos(')">cos</button>
+        <button class="button function" onclick="appendToDisplay('Math.tan(')">tan</button>
+        <button class="button function" onclick="appendToDisplay('Math.PI')">π</button>
+        <!-- Adjusted button classes -->
+        <button class="button addition" onclick="appendToDisplay('+')">+</button>
+        <button class="button" onclick="appendToDisplay('(')">()</button>
+        <button class="button" onclick="appendToDisplay('0')">0</button>
+        <button class="button" onclick="appendToDisplay('Math.log10(')">log</button>
+        <!-- Changed class to 'e' -->
+        <button class="button e" onclick="appendToDisplay('Math.E')">e</button>
+        <button class="button function" onclick="appendToDisplay('-')">-</button>
+        <button class="button" onclick="appendToDisplay('7')">7</button>
+        <button class="button" onclick="appendToDisplay('8')">8</button>
+        <button class="button" onclick="appendToDisplay('9')">9</button>
+        <button class="button" onclick="appendToDisplay(')')">()</button>
+        <button class="button function" onclick="appendToDisplay('*')">x</button>
+        <button class="button" onclick="appendToDisplay('4')">4</button>
+        <button class="button" onclick="appendToDisplay('5')">5</button>
+        <button class="button" onclick="appendToDisplay('6')">6</button>       
+        <button class="button" onclick="appendToDisplay('.')">.</button>
+        <button class="button function" onclick="appendToDisplay('/')">÷</button>
+        <button class="button" onclick="appendToDisplay('1')">1</button>
+        <button class="button" onclick="appendToDisplay('2')">2</button>
+        <button class="button" onclick="appendToDisplay('3')">3</button>
+        <!-- Adjusted button class -->
+        <button class="button equal" onclick="calculateResult()">=</button>
+        <button class="button function" onclick="appendToDisplay('Math.pow(')">^</button>
+      
+    </div>
+</div>
+<script>
+    const display = document.getElementById('display');
+    const history = document.getElementById('history');
+    let prevExpression = '';
+    let memoryValue = 0;
+
+    function appendToDisplay(value) {
+        if (display.textContent === '0' && value !== '.') {
+            display.textContent = '';
+        }
+        display.textContent += value;
+    }
+
+    function clearDisplay() {
+        display.textContent = '0';
+    }
+
+    function calculateResult() {
+        try {
+            const result = eval(display.textContent);
+            prevExpression = display.textContent + ' = ' + result;
+            display.textContent = result;
+            history.textContent = prevExpression;
+        } catch (error) {
+            display.textContent = 'Error';
+        }
+    }
+
+    function memoryRecall() {
+        display.textContent = memoryValue;
+    }
+
+    function memoryClear() {
+        memoryValue = 0;
+    }
+
+    function memoryStore() {
+        memoryValue = parseFloat(display.textContent);
+    }
+
+    // Keyboard and numpad support
+    document.addEventListener('keydown', function(event) {
+        const key = event.key;
+        if (key === 'Enter') {
+            calculateResult();
+        } else if (key === 'Escape') {
+            clearDisplay();
+        } else if (key === 'Backspace') {
+            display.textContent = display.textContent.slice(0, -1);
+        } else if (!isNaN(key) || key === '.') {
+            appendToDisplay(key);
+        } else if (key === '+' || key === '-' || key === '*' || key === '/' || key === '%') {
+            appendToDisplay(key);
+        } else if (key === '^') {
+            appendToDisplay('Math.pow(');
+        } else if (key === 's') {
+            appendToDisplay('Math.sqrt(');
+        } else if (key === 'l') {
+            appendToDisplay('Math.log10(');
+        } else if (key === 'p') {
+            appendToDisplay('Math.PI');
+        } else if (key === 'e') {
+            appendToDisplay('Math.E');
+        } else if (key === '0') {
+            appendToDisplay('0');
+        } else if (key === '1') {
+            appendToDisplay('1');
+        } else if (key === '2') {
+            appendToDisplay('2');
+        } else if (key === '3') {
+            appendToDisplay('3');
+        } else if (key === '4') {
+            appendToDisplay('4');
+        } else if (key === '5') {
+            appendToDisplay('5');
+        } else if (key === '6') {
+            appendToDisplay('6');
+        } else if (key === '7') {
+            appendToDisplay('7');
+        } else if (key === '8') {
+            appendToDisplay('8');
+        } else if (key === '9') {
+            appendToDisplay('9');
+        } else if (key === 'p') {
+            appendToDisplay('Math.PI');
+        } else if (key === 'e') {
+            appendToDisplay('Math.E');
+        } else if (key === 'm') {
+            memoryStore();
+        } else if (key === 'r') {
+            memoryRecall();
+        } else if (key === 'c') {
+            memoryClear();
+        }
+    });
+</script>
+</body>
+</html>
